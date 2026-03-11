@@ -60,40 +60,109 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Contact Details from Second Image */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8 border-t border-gray-200 mb-8">
-          <div>
-            <h4 className="text-emerald-600 font-bold mb-4 flex items-center gap-2">
-              <Globe className="w-4 h-4" /> Indonesia Contact
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-bold">Mr. Khalid</p>
-                <p className="text-gray-500">WA: +966 536 258 731</p>
-                <p className="text-gray-500">HP: +62 813 8987 9800</p>
-              </div>
-              <div>
-                <p className="font-bold">Mrs. Finyta</p>
-                <p className="text-gray-500">WA: +62 823 3203 6100</p>
-              </div>
-              <div>
-                <p className="font-bold">Mr. Arya</p>
-                <p className="text-gray-500">WA: +62 819 9994 8912</p>
-              </div>
-              <div className="sm:col-span-2 mt-2">
-                <p className="text-gray-500 italic">Gedung Citra Tower lt. 2 Unit K1, Jl. Benyamin Sueb Kab A.6, Kemayoran, Jakarta Pusat</p>
+        {/* Team Structure & Operating Hours */}
+        <div className="border-t border-gray-200 py-12 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Divisi Akuisisi */}
+            <div>
+              <h4 className="text-amber-600 font-bold mb-4 flex items-center gap-2">
+                <Phone className="w-4 h-4" /> Divisi Akuisisi
+              </h4>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Ketua Divisi</p>
+                  <p className="font-bold text-black">Admin Mas Ilham</p>
+                  <p className="text-gray-600">0857-7801-9661</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Tim</p>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="font-medium text-black">Admin Dayat</p>
+                      <p className="text-gray-600">0811-8880-6909</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-black">Admin Rehan</p>
+                      <p className="text-gray-600">0821-1559-7772</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div>
-            <h4 className="text-emerald-600 font-bold mb-4 flex items-center gap-2">
-              <Globe className="w-4 h-4" /> Madinah Contact
-            </h4>
-            <div className="text-sm">
-              <p className="font-bold">Mr. Abdul Aziz</p>
-              <p className="text-gray-500">WA: +966 565901892</p>
-              <p className="text-gray-500">HP: +966 536258731</p>
-              <p className="text-gray-500 mt-2 italic">Al-Medinah, Al-Aziziyah District, Thabet Ibn Al-Numan Street, In Front of King Abdulaziz Park (K,S,A)</p>
+
+            {/* Divisi Paket Konsorsium & Custom */}
+            <div className="space-y-8">
+              <div>
+                <h4 className="text-amber-600 font-bold mb-4 flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> Divisi Paket Konsorsium
+                </h4>
+                <div className="text-sm">
+                  <p className="font-bold text-black">Admin Yusuf</p>
+                  <p className="text-gray-600">0823-8200-8748</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-amber-600 font-bold mb-4 flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> Divisi Paket Custom
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Ketua Divisi</p>
+                    <p className="font-bold text-black">Admin Mba Ayu</p>
+                    <p className="text-gray-600">0811-4441-592</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Tim</p>
+                    <p className="font-medium text-black">Tim Custom</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Divisi Edukasi */}
+            <div>
+              <h4 className="text-amber-600 font-bold mb-4 flex items-center gap-2">
+                <Phone className="w-4 h-4" /> Divisi Edukasi
+              </h4>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Ketua Divisi</p>
+                  <p className="font-bold text-black">Admin Rusman</p>
+                  <p className="text-gray-600">0858-2524-6513</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Tim</p>
+                  <div>
+                    <p className="font-medium text-black">Admin Ranti</p>
+                    <p className="text-gray-600">0821-6006-6304</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Jam Operasional */}
+            <div>
+              <h4 className="text-amber-600 font-bold mb-4 flex items-center gap-2">
+                <Globe className="w-4 h-4" /> Jam Operasional
+              </h4>
+              <div className="space-y-3 text-sm">
+                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-gray-500">Senin – Jumat</span>
+                    <span className="font-bold text-black">09.00 – 17.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Sabtu</span>
+                    <span className="font-bold text-black">09.00 – 15.00</span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-2 text-right font-medium uppercase tracking-widest">Waktu Indonesia Barat (WIB)</p>
+                </div>
+                <div className="pt-4">
+                  <p className="text-xs text-gray-500 italic leading-relaxed">
+                    Kami siap melayani kebutuhan perjalanan umrah Anda selama jam kerja operasional.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
