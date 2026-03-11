@@ -31,12 +31,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                   className={`
                     flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap
                     ${isActive 
-                      ? 'bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-600/20' 
+                      ? 'bg-amber-50 text-amber-700 shadow-sm ring-1 ring-amber-600/20' 
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-amber-600' : 'text-gray-400'}`} />
                   {item.label}
                 </button>
               );

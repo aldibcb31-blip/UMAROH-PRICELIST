@@ -62,11 +62,11 @@ export const DatabaseView: React.FC = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                   isActive 
-                    ? 'bg-emerald-100 text-emerald-800 shadow-sm ring-1 ring-emerald-600/20' 
+                    ? 'bg-amber-100 text-amber-800 shadow-sm ring-1 ring-amber-600/20' 
                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-gray-200'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-700' : 'text-gray-500'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-amber-700' : 'text-gray-500'}`} />
                 {tab.label}
               </button>
             );
