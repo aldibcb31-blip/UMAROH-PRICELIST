@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { hotels, Hotel } from '../data/hotels';
 import { HANDLING_TIERS, HANDLING_CONSTANTS } from '../data/handlingSaudi';
 import { transportData } from '../data/transport';
@@ -9,6 +9,14 @@ import { handlingDomestikData } from '../data/handlingDomestik';
 import { manasikData } from '../data/manasik';
 import { ziarahData } from '../data/ziarah';
 import { keretaCepatData } from '../data/keretaCepat';
+import { Download, FileSpreadsheet, Image as ImageIcon, FileText } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { ProfessionalOffering } from './ProfessionalOffering';
 
 const getQuadPrice = (hotel: Hotel, dateStr: string) => {
   let targetSeason = hotel.seasons[0];
@@ -34,6 +42,8 @@ const getQuadPrice = (hotel: Hotel, dateStr: string) => {
 
 export const SalesOrderView: React.FC = () => {
   const [namaPaket, setNamaPaket] = useState('');
+  const [namaTravel, setNamaTravel] = useState('ANUGRAH TOUR & TRAVEL');
+  const [namaMitra, setNamaMitra] = useState('IQBAL HAKIM');
   const [tglKeberangkatan, setTglKeberangkatan] = useState('');
   const [programHari, setProgramHari] = useState('');
   const [jumlahPax, setJumlahPax] = useState(20);
@@ -47,6 +57,9 @@ export const SalesOrderView: React.FC = () => {
   const [kursUsd, setKursUsd] = useState(16000);
   const [malamMadinah, setMalamMadinah] = useState(3);
   const [malamMakkah, setMalamMakkah] = useState(4);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const professionalOfferingRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Selections
   const [selectedHotelMadinah, setSelectedHotelMadinah] = useState(hotels.find(h => h.city === 'Madinah')?.id || '');
@@ -117,19 +130,21 @@ export const SalesOrderView: React.FC = () => {
   const availableMadinahHotels = hotels.filter(h => h.city === 'Madinah' && getQuadPrice(h, tglKeberangkatan) !== null);
   const availableMakkahHotels = hotels.filter(h => h.city === 'Makkah' && getQuadPrice(h, tglKeberangkatan) !== null);
 
-  const availableMaskapai = maskapaiData.filter(m => {
-    let matchDate = true;
-    if (tglKeberangkatan) {
-      const selectedDate = new Date(tglKeberangkatan);
-      const start = new Date(m.tanggalKeberangkatan);
-      const end = new Date(m.tanggalKepulangan);
+  const availableMaskapai = [...maskapaiData]
+    .filter(m => {
+      const matchDays = programHari ? m.programDays.toString() === programHari : true;
+      return matchDays;
+    })
+    .sort((a, b) => {
+      if (!tglKeberangkatan) {
+        return new Date(a.tanggalKeberangkatan).getTime() - new Date(b.tanggalKeberangkatan).getTime();
+      }
+      const dateA = new Date(a.tanggalKeberangkatan).getTime();
+      const dateB = new Date(b.tanggalKeberangkatan).getTime();
+      const targetDate = new Date(tglKeberangkatan).getTime();
       
-      // Check if selected date is between start and end date of the maskapai
-      matchDate = selectedDate >= start && selectedDate <= end;
-    }
-    const matchDays = programHari ? m.programDays.toString() === programHari : true;
-    return matchDate && matchDays;
-  });
+      return Math.abs(dateA - targetDate) - Math.abs(dateB - targetDate);
+    });
 
   useEffect(() => {
     if (selectedHotelMadinah && !availableMadinahHotels.find(h => h.id === selectedHotelMadinah)) {
@@ -262,12 +277,155 @@ export const SalesOrderView: React.FC = () => {
   const hargaTripleDewasa = 32500000;
   const hargaDoubleDewasa = 34000000;
 
+  const handleDownloadJpg = async () => {
+    if (!tableRef.current) return;
+    setIsGenerating(true);
+    try {
+      const canvas = await html2canvas(tableRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      } as any);
+      const image = canvas.toDataURL('image/jpeg', 0.9);
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `Offering_${namaPaket || 'SalesOrder'}_${tglKeberangkatan || 'Draft'}.jpg`;
+      link.click();
+    } catch (error) {
+      console.error('JPG generation failed:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadExcel = () => {
+    const data = [
+      ["NAMA PAKET", namaPaket, "", "", "JUMLAH PAX", jumlahPax, "PIC", pic, "HARGA VISA UPDATE", "", "", `$${hargaVisaUpdate}/pax`],
+      ["TGL KEBERANGKATAN", tglKeberangkatan, "", "", "+ TL", tl, "", "", "HARGA TRANSPORTASI UPDATE", "", "", `SAR${hargaTransportasiUpdate}`],
+      ["PROGRAM HARI", programHari, "ROOM", room, "NAMA TRAVEL", namaTravel, "", "", "HARGA MUTAWWIF UPDATE", "", "", `SAR${hargaMutawwifUpdate}`],
+      ["NAMA MITRA", namaMitra, "", "", "", "", "", "", "", "", "", ""],
+      [],
+      ["DESK", "VENDOR", "HARGA APK", "HARGA VENDOR", "EST. MARGIN", "% MARGIN", "JAMAAH BAYAR", "TOTAL HRG JUAL", "JAMAAH BELI", "TOTAL HARGA BELI", "TOTAL MARGIN", "REFF."],
+      ["MASKAPAI", maskapaiObj?.namaVendor || "-", maskapaiHargaApk, maskapaiHargaVendor, maskapai.estMargin, formatPercent(maskapai.pctMargin), jamaahBayar, maskapai.totalHrgJual, jamaahBeli, maskapai.totalHargaBeli, maskapai.totalMargin, "CONFIRMED"],
+      ["HOTEL MADINAH", hotelMadinahObj?.vendor || "-", hotelMadinahHargaApk, hotelMadinahHargaVendor, hotelMadinah.estMargin, formatPercent(hotelMadinah.pctMargin), jamaahBayar, hotelMadinah.totalHrgJual, jamaahBeli, hotelMadinah.totalHargaBeli, hotelMadinah.totalMargin, "UPDATE RATE"],
+      ["HOTEL MAKKAH", hotelMakkahObj?.vendor || "-", hotelMakkahHargaApk, hotelMakkahHargaVendor, hotelMakkah.estMargin, formatPercent(hotelMakkah.pctMargin), jamaahBayar, hotelMakkah.totalHrgJual, jamaahBeli, hotelMakkah.totalHargaBeli, hotelMakkah.totalMargin, "UPDATE RATE"],
+      ["HANDLING SAUDI", "TFA", handlingHargaApk, handlingHargaVendor, handling.estMargin, formatPercent(handling.pctMargin), jamaahBayar, handling.totalHrgJual, jamaahBeli, handling.totalHargaBeli, handling.totalMargin, "UPDATE"],
+      ["PERLENGKAPAN", "UMAROH", equipmentHargaApk, equipmentHargaVendor, perlengkapan.estMargin, formatPercent(perlengkapan.pctMargin), jamaahBayar, perlengkapan.totalHrgJual, jamaahBeli, perlengkapan.totalHargaBeli, perlengkapan.totalMargin, "GUDANG OK"],
+      ["VISA", "TFA", visaHargaApk, visaHargaVendor, visaRow.estMargin, formatPercent(visaRow.pctMargin), jamaahBayar, visaRow.totalHrgJual, jamaahBeli, visaRow.totalHargaBeli, visaRow.totalMargin, "UPDATE"],
+      ["TRANSPORT", transportObj?.namaVendor || "-", transportHargaApk, transportHargaVendor, transportRow.estMargin, formatPercent(transportRow.pctMargin), jamaahBayar, transportRow.totalHrgJual, jamaahBeli, transportRow.totalHargaBeli, transportRow.totalMargin, ""],
+      ["ASURANSI ZURICH BASIC", "ZURICH", asuransiHargaApk, asuransiHargaVendor, asuransi.estMargin, formatPercent(asuransi.pctMargin), jamaahBayar, asuransi.totalHrgJual, jamaahBeli, asuransi.totalHargaBeli, asuransi.totalMargin, "UPDATE"],
+      ["MANASIK", "-", manasikHargaApk, manasikHargaVendor, manasik.estMargin, formatPercent(manasik.pctMargin), jamaahBayar, manasik.totalHrgJual, jamaahBeli, manasik.totalHargaBeli, manasik.totalMargin, ""],
+      ["ZIARAH", "-", ziarahHargaApk, ziarahHargaVendor, ziarah.estMargin, formatPercent(ziarah.pctMargin), jamaahBayar, ziarah.totalHrgJual, jamaahBeli, ziarah.totalHargaBeli, ziarah.totalMargin, ""],
+      ["KERETA CEPAT", "-", keretaCepatHargaApk, keretaCepatHargaVendor, keretaCepat.estMargin, formatPercent(keretaCepat.pctMargin), jamaahBayar, keretaCepat.totalHrgJual, jamaahBeli, keretaCepat.totalHargaBeli, keretaCepat.totalMargin, ""],
+      ["HANDLING DOMESTIK", "BOWO", handlingDomestikHargaApk, handlingDomestikHargaVendor, handlingDomestik.estMargin, formatPercent(handlingDomestik.pctMargin), jamaahBayar, handlingDomestik.totalHrgJual, jamaahBeli, handlingDomestik.totalHargaBeli, handlingDomestik.totalMargin, "UPDATE"],
+      ["TOUR LEADER (TL)", "", tlHargaApk, tlHargaVendor, tlRow.estMargin, "0%", jamaahBayar, tlRow.totalHrgJual, "", "", tlRow.totalMargin, ""],
+      [],
+      ["HARGA DEWASA SEBELUM ADA KOMISI", "", totalHargaApk, totalHargaVendor, totalEstMargin, formatPercent(totalEstMargin / totalHargaApk), "", totalHrgJual, "", totalHargaBeliAll, totalMarginAll, ""],
+      ["KOMISI MITRA", "", komisiMitra, "", "", "", "", "", "", "", "", ""],
+      ["KOMISI UMAROH", "", komisiUmaroh, "", "", "", "", "", "", "", "", ""],
+      ["HARGA QUAD DEWASA SETELAH ADA KOMISI", "", hargaQuadDewasa, "", "", "", "", "", "", "", "", ""],
+      ["HARGA TRIPLE DEWASA SETELAH ADA KOMISI", "", hargaTripleDewasa, "", "", "", "", "", "", "", "", ""],
+      ["HARGA DOUBLE DEWASA SETELAH ADA KOMISI", "", hargaDoubleDewasa, "", "", "", "", "", "", "", "", ""]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Order");
+    XLSX.writeFile(wb, `SalesOrder_${namaPaket || 'Draft'}_${tglKeberangkatan || ''}.xlsx`);
+  };
+
+  const handleDownloadPdf = () => {
+    if (!professionalOfferingRef.current) return;
+    
+    const element = professionalOfferingRef.current;
+    const opt = {
+      margin: 0,
+      filename: `Offering_${namaPaket || 'Draft'}_${tglKeberangkatan || ''}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true,
+        logging: false,
+        letterRendering: true
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
+  const offeringData = {
+    tanggalPembuatan: new Date(),
+    namaTravel: namaTravel,
+    namaMitra: namaMitra,
+    jumlahPax: jumlahPax,
+    tourLeaderCount: tl,
+    jadwalKeberangkatan: tglKeberangkatan ? format(new Date(tglKeberangkatan), 'MMMM yyyy', { locale: id }) : '-',
+    program: namaPaket,
+    prices: {
+      maskapai: maskapaiHargaApk,
+      hotelMadinah: hotelMadinahHargaApk,
+      hotelMakkah: hotelMakkahHargaApk,
+      handlingSaudi: handlingHargaApk,
+      mutawif: 0, // Not explicitly tracked as separate state yet
+      aksesoris: equipmentHargaApk,
+      addOn: 0, // Not explicitly tracked as separate state yet
+      visa: visaHargaApk + transportHargaApk,
+      asuransi: asuransiHargaApk,
+      handlingDomestik: handlingDomestikHargaApk,
+      tl: tlHargaApk,
+      hargaHpp: totalHargaApk,
+      komisiMitra: komisiMitra,
+      komisiUmaroh: komisiUmaroh,
+      hargaQuad: hargaQuadDewasa,
+      hargaTriple: hargaQuadDewasa + 2500000, 
+      hargaDouble: hargaQuadDewasa + 4000000, 
+    },
+    details: {
+      hotelMadinahName: hotelMadinahObj?.name || '-',
+      hotelMakkahName: hotelMakkahObj?.name || '-',
+      maskapaiName: maskapaiObj?.name || '-',
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-full overflow-x-auto">
+      {/* Hidden PDF Template */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        <div ref={professionalOfferingRef}>
+          <ProfessionalOffering data={offeringData} />
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-800">Sales Order / Quotation</h2>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            <button 
+              onClick={handleDownloadJpg}
+              disabled={isGenerating}
+              className="flex items-center gap-2 bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors text-sm disabled:opacity-50"
+            >
+              <ImageIcon className="w-4 h-4" />
+              {isGenerating ? 'Generating...' : 'Offering (JPG)'}
+            </button>
+            <button 
+              onClick={handleDownloadExcel}
+              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Excel
+            </button>
+            <button 
+              onClick={handleDownloadPdf}
+              className="flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors text-sm"
+            >
+              <FileText className="w-4 h-4" />
+              PDF
+            </button>
+            <div className="h-6 w-px bg-gray-300 mx-2"></div>
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-600">Kurs SAR:</label>
               <input type="number" value={kursSaudi} onChange={e => setKursSaudi(Number(e.target.value))} className="border rounded px-2 py-1 w-24 text-sm" />
@@ -279,7 +437,7 @@ export const SalesOrderView: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div ref={tableRef} className="overflow-x-auto bg-white">
           <table className="w-full text-sm border-collapse min-w-[1200px]">
             <tbody>
               {/* Header Rows */}
@@ -313,7 +471,7 @@ export const SalesOrderView: React.FC = () => {
                 <td colSpan={3} className="border-r border-gray-300 p-2 font-bold text-right italic text-gray-600">HARGA TRANSPORTASI UPDATE</td>
                 <td className="p-2 font-bold text-gray-600 italic">SAR{hargaTransportasiUpdate}</td>
               </tr>
-              <tr className="bg-gray-100 border-b border-gray-400">
+              <tr className="bg-gray-100 border-b border-gray-300">
                 <td colSpan={2} className="border-r border-gray-300 p-2 font-bold text-center">PROGRAM HARI</td>
                 <td colSpan={2} className="border-r border-gray-300 p-2">
                   <select value={programHari} onChange={e => setProgramHari(e.target.value)} className="w-full bg-white border border-gray-300 rounded px-2 py-1">
@@ -327,10 +485,19 @@ export const SalesOrderView: React.FC = () => {
                 <td className="border-r border-gray-300 p-2">
                   <input type="text" value={room} onChange={e => setRoom(e.target.value)} className="w-full bg-white border border-gray-300 rounded px-2 py-1" />
                 </td>
-                <td className="border-r border-gray-300 p-2"></td>
-                <td className="border-r border-gray-300 p-2"></td>
+                <td className="border-r border-gray-300 p-2 font-bold">NAMA TRAVEL</td>
+                <td className="border-r border-gray-300 p-2">
+                  <input type="text" value={namaTravel} onChange={e => setNamaTravel(e.target.value)} className="w-full bg-white border border-gray-300 rounded px-2 py-1" />
+                </td>
                 <td colSpan={3} className="border-r border-gray-300 p-2 font-bold text-right italic text-gray-600">HARGA MUTAWWIF UPDATE</td>
                 <td className="p-2 font-bold text-gray-600 italic">SAR{hargaMutawwifUpdate}</td>
+              </tr>
+              <tr className="bg-gray-100 border-b border-gray-400">
+                <td colSpan={2} className="border-r border-gray-300 p-2 font-bold text-center">NAMA MITRA</td>
+                <td colSpan={2} className="border-r border-gray-300 p-2">
+                  <input type="text" value={namaMitra} onChange={e => setNamaMitra(e.target.value)} className="w-full bg-white border border-gray-300 rounded px-2 py-1" />
+                </td>
+                <td colSpan={8} className="border-r border-gray-300 p-2"></td>
               </tr>
 
               {/* Column Headers */}
@@ -513,7 +680,7 @@ export const SalesOrderView: React.FC = () => {
                     ))}
                   </select>
                 </td>
-                <td className="border-r border-gray-300 p-2 text-center"></td>
+                <td className="border-r border-gray-300 p-2 text-center">{transportObj?.namaVendor || ''}</td>
                 <td className="border-r border-gray-300 p-2 text-right">{formatCurrency(transportHargaApk)}</td>
                 <td className="border-r border-gray-300 p-2 text-right">{formatCurrency(transportHargaVendor)}</td>
                 <td className="border-r border-gray-300 p-2 text-right">{formatCurrency(transportRow.estMargin)}</td>

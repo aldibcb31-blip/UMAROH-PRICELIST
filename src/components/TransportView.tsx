@@ -142,6 +142,9 @@ export const TransportView: React.FC = () => {
                   <Car className="w-5 h-5 text-white" />
                 )}
                 <h2 className="text-lg font-bold text-white">{vehicle.name}</h2>
+                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded text-white font-medium uppercase tracking-wider">
+                  Vendor: {vehicle.namaVendor}
+                </span>
               </div>
               
               <div className="overflow-x-auto">

@@ -266,8 +266,11 @@ export const TransportTemplateView: React.FC = () => {
         </div>
 
         {/* Vehicle Title */}
-        <div className="relative z-10 mb-2">
+        <div className="relative z-10 mb-2 flex justify-between items-end">
           <h2 className="text-2xl font-bold uppercase">{selectedVehicleName}</h2>
+          <span className="text-xs font-bold uppercase bg-gray-900 text-[#FDB913] px-2 py-1 rounded">
+            Vendor: {transportData.find(v => v.id === selectedVehicleId)?.namaVendor || ''}
+          </span>
         </div>
 
         {/* Table Section */}

@@ -6,6 +6,7 @@ export interface TransportRoute {
 export interface TransportVehicle {
   id: string;
   name: string;
+  namaVendor: string;
   routes: TransportRoute[];
 }
 
@@ -13,6 +14,7 @@ export const transportData: TransportVehicle[] = [
   {
     id: 'bus',
     name: 'BUS',
+    namaVendor: 'TFA',
     routes: [
       { route: 'Airport Jeddah - Hotel Jeddah', price: 700 },
       { route: 'Airport Jeddah - Hotel Madinah', price: 1450 },
@@ -31,6 +33,7 @@ export const transportData: TransportVehicle[] = [
   {
     id: 'hiace',
     name: 'HIACE',
+    namaVendor: 'TFA',
     routes: [
       { route: 'Airport Jeddah - Hotel Jeddah', price: 500 },
       { route: 'Airport Jeddah - Hotel Makkah', price: 550 },
@@ -52,6 +55,7 @@ export const transportData: TransportVehicle[] = [
   {
     id: 'staria',
     name: 'STARIA',
+    namaVendor: 'TFA',
     routes: [
       { route: 'Airport Jeddah - Hotel Jeddah', price: 450 },
       { route: 'Airport Jeddah - Hotel Makkah', price: 550 },
@@ -72,6 +76,7 @@ export const transportData: TransportVehicle[] = [
   {
     id: 'gmc',
     name: 'GMC',
+    namaVendor: 'TFA',
     routes: [
       { route: 'Airport Jeddah - Hotel Jeddah', price: 500 },
       { route: 'Airport Jeddah - Hotel Makkah', price: 600 },
