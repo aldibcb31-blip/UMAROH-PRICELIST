@@ -11,7 +11,7 @@ import { TemplatesView } from './components/TemplatesView';
 import { SalesOrderView } from './components/SalesOrderView';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('sales-order');
+  const [activeTab, setActiveTab] = useState<TabType>('templates');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -44,7 +44,7 @@ function App() {
             </p>
             <div className="mt-6 flex gap-4">
               <div className="bg-amber-500 text-black px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-sm">
-                Hotel Pricelist
+                pricelist dan sales order
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Star, MapPin, Calendar, Printer, Users, Briefcase, RefreshCw, Download 
 import { hotels, Hotel } from '../data/hotels';
 import { isDateInRange } from '../utils/dateUtils';
 import { HANDLING_TIERS } from '../data/handlingSaudi';
+import { visaData } from '../data/visa';
 import html2canvas from 'html2canvas';
 
 interface QuotationRow {
@@ -17,7 +18,11 @@ export const QuotationView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [paxCount, setPaxCount] = useState<number>(35);
   const [includeHandling, setIncludeHandling] = useState<boolean>(false);
+  const [includeMutawif, setIncludeMutawif] = useState<boolean>(false);
+  const [includeVisa, setIncludeVisa] = useState<boolean>(false);
+  const [currency, setCurrency] = useState<'SAR' | 'USD' | 'IDR'>('IDR');
   const [kurs, setKurs] = useState<number>(4600);
+  const [kursUsd, setKursUsd] = useState<number>(17000);
   const [rows, setRows] = useState<QuotationRow[]>(Array(14).fill({}));
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
@@ -25,11 +30,23 @@ export const QuotationView: React.FC = () => {
   // Helper to format currency
   const formatCurrency = (amount: number | string) => {
     if (typeof amount === 'string') return amount;
-    return new Intl.NumberFormat('id-ID', {
+    
+    let currencyCode = 'IDR';
+    let locale = 'id-ID';
+    
+    if (currency === 'SAR') {
+      currencyCode = 'SAR';
+      locale = 'en-US';
+    } else if (currency === 'USD') {
+      currencyCode = 'USD';
+      locale = 'en-US';
+    }
+
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      currency: currencyCode,
+      minimumFractionDigits: currency === 'IDR' ? 0 : 2,
+      maximumFractionDigits: currency === 'IDR' ? 0 : 2,
     }).format(amount);
   };
 
@@ -65,7 +82,24 @@ export const QuotationView: React.FC = () => {
     return Math.round(hppUSD * 3.75);
   };
 
-  // Update rows when date, paxCount, includeHandling, or kurs changes
+  // Get visa price per pax in IDR based on pax count
+  const getVisaPriceIDR = (): number => {
+    if (!includeVisa) return 0;
+    const visa = visaData.find(v => {
+      const range = v.paxRange.split(' ')[0];
+      const [min, max] = range.split('-').map(Number);
+      return paxCount >= min && paxCount <= max;
+    }) || visaData[0];
+    return visa.sellingPrice;
+  };
+
+  // Get mutawwif price per pax in SAR
+  const getMutawwifPriceSAR = (): number => {
+    if (!includeMutawif) return 0;
+    return 250; // Default selling price in SAR
+  };
+
+  // Update rows when date, paxCount, includeHandling, includeMutawif, includeVisa, currency, or kurs changes
   useEffect(() => {
     if (!selectedDate) {
       setRows(Array(14).fill({}));
@@ -74,37 +108,89 @@ export const QuotationView: React.FC = () => {
 
     const checkDate = new Date(selectedDate);
     const availableMadinahHotels = hotels.filter(hotel => {
-      return hotel.city === 'Madinah' && hotel.seasons.some(season => isDateInRange(checkDate, season.range));
+      if (hotel.city !== 'Madinah') return false;
+      const season = hotel.seasons.find(s => isDateInRange(checkDate, s.range));
+      return season && season.prices && season.prices.length > 0;
     });
 
     const handlingSAR = getHandlingPriceSAR();
+    const mutawwifSAR = getMutawwifPriceSAR();
+    const visaIDR = getVisaPriceIDR();
 
-    // Fill rows with available Madinah hotels
-    const newRows = Array.from({ length: 14 }, (_, i) => {
-      const madinahHotel = availableMadinahHotels[i];
-      if (!madinahHotel) return {};
+    // Update existing rows with new prices if both hotels are present
+    setRows(prevRows => {
+      // If prevRows is empty (initial state), fill with Madinah hotels
+      if (prevRows.every(r => !r.madinah && !r.makkah)) {
+        return Array.from({ length: 14 }, (_, i) => {
+          const madinahHotel = availableMadinahHotels[i];
+          return {
+            madinah: madinahHotel || {},
+            makkah: {},
+            priceDouble: '-',
+            priceTriple: '-',
+            priceQuad: '-',
+          };
+        });
+      }
 
-      const pDoubleMadinah = getHotelPrice(madinahHotel, selectedDate, 'Double');
-      const pTripleMadinah = getHotelPrice(madinahHotel, selectedDate, 'Triple');
-      const pQuadMadinah = getHotelPrice(madinahHotel, selectedDate, 'Quad');
+      // Otherwise, update prices for existing rows
+      return prevRows.map(row => {
+        if (row.madinah?.name && row.makkah?.name) {
+          let pDoubleMadinah = 0, pTripleMadinah = 0, pQuadMadinah = 0;
+          let pDoubleMakkah = 0, pTripleMakkah = 0, pQuadMakkah = 0;
 
-      // Since we don't have Makkah hotel auto-selected, we only calculate Madinah + Handling
-      // If user selects Makkah later, handleHotelChange will handle it.
-      
-      // Calculate total SAR then convert to IDR
-      const totalDoubleSAR = (pDoubleMadinah ? pDoubleMadinah + handlingSAR : 0);
-      const totalTripleSAR = (pTripleMadinah ? pTripleMadinah + handlingSAR : 0);
-      const totalQuadSAR = (pQuadMadinah ? pQuadMadinah + handlingSAR : 0);
+          if (row.madinah?.id) {
+            pDoubleMadinah = getHotelPrice(row.madinah as Hotel, selectedDate, 'Double');
+            pTripleMadinah = getHotelPrice(row.madinah as Hotel, selectedDate, 'Triple');
+            pQuadMadinah = getHotelPrice(row.madinah as Hotel, selectedDate, 'Quad');
+          }
+          
+          if (row.makkah?.id) {
+            pDoubleMakkah = getHotelPrice(row.makkah as Hotel, selectedDate, 'Double');
+            pTripleMakkah = getHotelPrice(row.makkah as Hotel, selectedDate, 'Triple');
+            pQuadMakkah = getHotelPrice(row.makkah as Hotel, selectedDate, 'Quad');
+          }
 
-      return {
-        madinah: madinahHotel,
-        priceDouble: totalDoubleSAR ? totalDoubleSAR * kurs : '-',
-        priceTriple: totalTripleSAR ? totalTripleSAR * kurs : '-',
-        priceQuad: totalQuadSAR ? totalQuadSAR * kurs : '-',
-      };
+          // Check if both hotels have prices. If Madinah has no price but Makkah has, don't show.
+          // We check Quad as a proxy for having a price entry.
+          if (pQuadMadinah === 0 || pQuadMakkah === 0) {
+            return {
+              ...row,
+              priceDouble: '-',
+              priceTriple: '-',
+              priceQuad: '-',
+            };
+          }
+
+          const totalDoubleSAR = pDoubleMadinah + pDoubleMakkah + handlingSAR + mutawwifSAR;
+          const totalTripleSAR = pTripleMadinah + pTripleMakkah + handlingSAR + mutawwifSAR;
+          const totalQuadSAR = pQuadMadinah + pQuadMakkah + handlingSAR + mutawwifSAR;
+
+          // Convert to target currency
+          const convert = (sarAmount: number) => {
+            const idrAmount = (sarAmount * kurs) + visaIDR;
+            if (currency === 'IDR') return idrAmount;
+            if (currency === 'SAR') return idrAmount / kurs;
+            if (currency === 'USD') return idrAmount / kursUsd;
+            return idrAmount;
+          };
+
+          return {
+            ...row,
+            priceDouble: convert(totalDoubleSAR),
+            priceTriple: convert(totalTripleSAR),
+            priceQuad: convert(totalQuadSAR),
+          };
+        }
+        return {
+          ...row,
+          priceDouble: '-',
+          priceTriple: '-',
+          priceQuad: '-',
+        };
+      });
     });
-    setRows(newRows);
-  }, [selectedDate, paxCount, includeHandling, kurs]);
+  }, [selectedDate, paxCount, includeHandling, includeMutawif, includeVisa, kurs, kursUsd, currency]);
 
   const handleHotelChange = (index: number, type: 'madinah' | 'makkah', name: string) => {
     const newRows = [...rows];
@@ -119,32 +205,54 @@ export const QuotationView: React.FC = () => {
       currentRow.makkah = matchedHotel ? { ...matchedHotel } : { name };
     }
 
-    // Recalculate prices if we have a date
-    if (selectedDate) {
+    // Recalculate prices if we have a date and BOTH hotels are selected
+    if (selectedDate && currentRow.madinah?.name && currentRow.makkah?.name) {
       const handlingSAR = getHandlingPriceSAR();
-      let pDouble = 0, pTriple = 0, pQuad = 0;
+      const mutawwifSAR = getMutawwifPriceSAR();
+      const visaIDR = getVisaPriceIDR();
+      
+      let pDoubleMadinah = 0, pTripleMadinah = 0, pQuadMadinah = 0;
+      let pDoubleMakkah = 0, pTripleMakkah = 0, pQuadMakkah = 0;
 
       if (currentRow.madinah?.id) {
-        pDouble += getHotelPrice(currentRow.madinah as Hotel, selectedDate, 'Double');
-        pTriple += getHotelPrice(currentRow.madinah as Hotel, selectedDate, 'Triple');
-        pQuad += getHotelPrice(currentRow.madinah as Hotel, selectedDate, 'Quad');
+        pDoubleMadinah = getHotelPrice(currentRow.madinah as Hotel, selectedDate, 'Double');
+        pTripleMadinah = getHotelPrice(currentRow.madinah as Hotel, selectedDate, 'Triple');
+        pQuadMadinah = getHotelPrice(currentRow.madinah as Hotel, selectedDate, 'Quad');
       }
       
       if (currentRow.makkah?.id) {
-        pDouble += getHotelPrice(currentRow.makkah as Hotel, selectedDate, 'Double');
-        pTriple += getHotelPrice(currentRow.makkah as Hotel, selectedDate, 'Triple');
-        pQuad += getHotelPrice(currentRow.makkah as Hotel, selectedDate, 'Quad');
+        pDoubleMakkah = getHotelPrice(currentRow.makkah as Hotel, selectedDate, 'Double');
+        pTripleMakkah = getHotelPrice(currentRow.makkah as Hotel, selectedDate, 'Triple');
+        pQuadMakkah = getHotelPrice(currentRow.makkah as Hotel, selectedDate, 'Quad');
       }
 
-      // Add handling only once per pax (not per hotel)
-      // Assuming handling is for the whole trip
-      if (pDouble > 0) pDouble += handlingSAR;
-      if (pTriple > 0) pTriple += handlingSAR;
-      if (pQuad > 0) pQuad += handlingSAR;
+      // Check if both hotels have prices
+      if (pQuadMadinah === 0 || pQuadMakkah === 0) {
+        currentRow.priceDouble = '-';
+        currentRow.priceTriple = '-';
+        currentRow.priceQuad = '-';
+      } else {
+        const totalDoubleSAR = pDoubleMadinah + pDoubleMakkah + handlingSAR + mutawwifSAR;
+        const totalTripleSAR = pTripleMadinah + pTripleMakkah + handlingSAR + mutawwifSAR;
+        const totalQuadSAR = pQuadMadinah + pQuadMakkah + handlingSAR + mutawwifSAR;
 
-      currentRow.priceDouble = pDouble ? pDouble * kurs : (currentRow.priceDouble || '-');
-      currentRow.priceTriple = pTriple ? pTriple * kurs : (currentRow.priceTriple || '-');
-      currentRow.priceQuad = pQuad ? pQuad * kurs : (currentRow.priceQuad || '-');
+        const convert = (sarAmount: number) => {
+          const idrAmount = (sarAmount * kurs) + visaIDR;
+          if (currency === 'IDR') return idrAmount;
+          if (currency === 'SAR') return idrAmount / kurs;
+          if (currency === 'USD') return idrAmount / kursUsd;
+          return idrAmount;
+        };
+
+        currentRow.priceDouble = convert(totalDoubleSAR);
+        currentRow.priceTriple = convert(totalTripleSAR);
+        currentRow.priceQuad = convert(totalQuadSAR);
+      }
+    } else {
+      // If either hotel is missing, reset prices to '-'
+      currentRow.priceDouble = '-';
+      currentRow.priceTriple = '-';
+      currentRow.priceQuad = '-';
     }
 
     newRows[index] = currentRow;
@@ -349,8 +457,25 @@ export const QuotationView: React.FC = () => {
     }
   };
 
-  const madinahHotels = useMemo(() => hotels.filter(h => h.city === 'Madinah'), []);
-  const makkahHotels = useMemo(() => hotels.filter(h => h.city === 'Makkah'), []);
+  const madinahHotels = useMemo(() => {
+    if (!selectedDate) return hotels.filter(h => h.city === 'Madinah');
+    const checkDate = new Date(selectedDate);
+    return hotels.filter(h => {
+      if (h.city !== 'Madinah') return false;
+      const season = h.seasons.find(s => isDateInRange(checkDate, s.range));
+      return season && season.prices && season.prices.length > 0;
+    });
+  }, [selectedDate]);
+
+  const makkahHotels = useMemo(() => {
+    if (!selectedDate) return hotels.filter(h => h.city === 'Makkah');
+    const checkDate = new Date(selectedDate);
+    return hotels.filter(h => {
+      if (h.city !== 'Makkah') return false;
+      const season = h.seasons.find(s => isDateInRange(checkDate, s.range));
+      return season && season.prices && season.prices.length > 0;
+    });
+  }, [selectedDate]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center gap-6 print:p-0 print:bg-white print:block">
@@ -384,7 +509,21 @@ export const QuotationView: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <RefreshCw className="text-gray-500 w-5 h-5" />
-            <span className="font-medium text-gray-700">Kurs (SAR):</span>
+            <span className="font-medium text-gray-700">Currency:</span>
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as 'SAR' | 'USD' | 'IDR')}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"
+            >
+              <option value="IDR">IDR (Rupiah)</option>
+              <option value="SAR">SAR (Real)</option>
+              <option value="USD">USD (Dollar)</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <RefreshCw className="text-gray-500 w-5 h-5" />
+            <span className="font-medium text-gray-700">Kurs SAR:</span>
             <input
               type="number"
               value={kurs}
@@ -394,16 +533,47 @@ export const QuotationView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <RefreshCw className="text-gray-500 w-5 h-5" />
+            <span className="font-medium text-gray-700">Kurs USD:</span>
+            <input
+              type="number"
+              value={kursUsd}
+              onChange={(e) => setKursUsd(Number(e.target.value))}
+              className="border border-gray-300 rounded-lg px-3 py-2 w-24 focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
             <Briefcase className="text-gray-500 w-5 h-5" />
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={includeHandling}
-                onChange={(e) => setIncludeHandling(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-              />
-              <span className="font-medium text-gray-700">Include Handling</span>
-            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeHandling}
+                  onChange={(e) => setIncludeHandling(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                />
+                <span className="font-medium text-gray-700">Handling</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeMutawif}
+                  onChange={(e) => setIncludeMutawif(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                />
+                <span className="font-medium text-gray-700">Mutawif</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeVisa}
+                  onChange={(e) => setIncludeVisa(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                />
+                <span className="font-medium text-gray-700">Visa</span>
+              </label>
+            </div>
           </div>
         </div>
         
@@ -475,9 +645,9 @@ export const QuotationView: React.FC = () => {
                   <th className="p-2 border-r border-amber-400/50 w-6"><Star className="w-3 h-3 mx-auto fill-current" /></th>
                   <th className="p-2 border-r border-amber-400/50">Makkah</th>
                   <th className="p-2 border-r border-amber-400/50 w-6"><Star className="w-3 h-3 mx-auto fill-current" /></th>
-                  <th className="p-2 border-r border-amber-400/50 w-22">Quad (IDR)</th>
-                  <th className="p-2 border-r border-amber-400/50 w-22">Triple (IDR)</th>
-                  <th className="p-2 w-22">Double (IDR)</th>
+                  <th className="p-2 border-r border-amber-400/50 w-22">Quad ({currency})</th>
+                  <th className="p-2 border-r border-amber-400/50 w-22">Triple ({currency})</th>
+                  <th className="p-2 w-22">Double ({currency})</th>
                 </tr>
               </thead>
               <tbody>
@@ -569,6 +739,8 @@ export const QuotationView: React.FC = () => {
             <div className="w-[60%]">
                 <h3 className="text-sm font-bold mb-1 uppercase tracking-wide border-b-2 border-gray-900 inline-block">HANDLING SAUDI ARABIA ( ECONOMY )</h3>
                 <ol className="list-decimal list-outside ml-4 text-[10px] font-bold space-y-0.5 leading-tight">
+                    {includeVisa && <li>Visa Umrah</li>}
+                    {includeMutawif && <li>Mutawif / Guide</li>}
                     <li>Handling Kedatangan Bandara Madinah / Jeddah</li>
                     <li>Handling kepulangan di Bandara Jeddah / Madinah</li>
                     <li>Biaya Porter Bandara Madinah & Jeddah</li>
