@@ -46,9 +46,6 @@ function App() {
               <div className="bg-amber-500 text-black px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-sm">
                 Hotel Pricelist
               </div>
-              <div className="bg-black text-white px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-sm">
-                Min Order (3 Room)
-              </div>
             </div>
           </div>
         </div>

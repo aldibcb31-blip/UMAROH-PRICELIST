@@ -171,14 +171,14 @@ export const Footer: React.FC = () => {
           <div className="flex gap-6">
             <div className="flex items-center gap-2">
               <Globe className="w-5 h-5 text-amber-500" />
-              <a href="https://www.ptalharmain.com" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-amber-600 transition-colors">
-                www.ptalharmain.com
+              <a href="https://umaroh.com/" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-amber-600 transition-colors">
+                https://umaroh.com/
               </a>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="w-5 h-5 text-amber-500" />
-              <a href="mailto:info@ptalharmain.com" className="text-sm hover:text-amber-600 transition-colors">
-                info@ptalharmain.com
+              <a href="mailto:umarohtravel@gmail.com" className="text-sm hover:text-amber-600 transition-colors">
+                umarohtravel@gmail.com
               </a>
             </div>
           </div>

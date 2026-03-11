@@ -4,9 +4,10 @@ import { HandlingTemplateView } from './HandlingTemplateView';
 import { HotelTemplateView } from './HotelTemplateView';
 import { TransportTemplateView } from './TransportTemplateView';
 import { MutawifTemplateView } from './MutawifTemplateView';
-import { FileSpreadsheet, LayoutTemplate, Building2, Bus, Users } from 'lucide-react';
+import { MaskapaiTemplateView } from './MaskapaiTemplateView';
+import { FileSpreadsheet, LayoutTemplate, Building2, Bus, Users, PlaneTakeoff } from 'lucide-react';
 
-type TemplateTab = 'quotation' | 'handling' | 'hotel' | 'transport' | 'mutawif';
+type TemplateTab = 'quotation' | 'handling' | 'hotel' | 'transport' | 'mutawif' | 'maskapai';
 
 export const TemplatesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TemplateTab>('quotation');
@@ -15,6 +16,7 @@ export const TemplatesView: React.FC = () => {
     { id: 'quotation', label: 'Quotation', icon: FileSpreadsheet },
     { id: 'handling', label: 'Handling', icon: LayoutTemplate },
     { id: 'hotel', label: 'Hotel', icon: Building2 },
+    { id: 'maskapai', label: 'Maskapai', icon: PlaneTakeoff },
     { id: 'transport', label: 'Transportasi', icon: Bus },
     { id: 'mutawif', label: 'Mutawif', icon: Users },
   ] as const;
@@ -24,6 +26,7 @@ export const TemplatesView: React.FC = () => {
       case 'quotation': return <QuotationView />;
       case 'handling': return <HandlingTemplateView />;
       case 'hotel': return <HotelTemplateView />;
+      case 'maskapai': return <MaskapaiTemplateView />;
       case 'transport': return <TransportTemplateView />;
       case 'mutawif': return <MutawifTemplateView />;
       default: return <QuotationView />;
