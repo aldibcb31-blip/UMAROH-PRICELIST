@@ -36,8 +36,8 @@ export const TemplatesView: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       {/* Sub-navigation */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 print:hidden shadow-sm">
-        <div className="container mx-auto flex flex-wrap gap-2 justify-center">
+      <div className="bg-white border-b border-gray-200 px-4 py-3 print:hidden shadow-sm overflow-x-auto scrollbar-hide">
+        <div className="container mx-auto flex flex-nowrap md:flex-wrap gap-2 justify-start md:justify-center min-w-max md:min-w-0">
           {tabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

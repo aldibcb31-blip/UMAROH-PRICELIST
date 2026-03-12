@@ -40,62 +40,47 @@ const getQuadPrice = (hotel: Hotel, dateStr: string) => {
   return quadPriceEntry ? quadPriceEntry.price : null;
 };
 
+import { AIPromptInput } from './AIPromptInput';
+
 export const SalesOrderView: React.FC = () => {
   const [namaPaket, setNamaPaket] = useState('');
-  const [namaTravel, setNamaTravel] = useState('ANUGRAH TOUR & TRAVEL');
-  const [namaMitra, setNamaMitra] = useState('IQBAL HAKIM');
+  const [namaTravel, setNamaTravel] = useState('Umaroh.com');
+  const [namaMitra, setNamaMitra] = useState('');
   const [tglKeberangkatan, setTglKeberangkatan] = useState('');
-  const [programHari, setProgramHari] = useState('');
-  const [jumlahPax, setJumlahPax] = useState(20);
-  const [tl, setTl] = useState(0);
-  const [room, setRoom] = useState('');
-  const [pic, setPic] = useState('RUSMAN');
-  const [hargaVisaUpdate, setHargaVisaUpdate] = useState(135);
-  const [hargaTransportasiUpdate, setHargaTransportasiUpdate] = useState(2500);
-  const [hargaMutawwifUpdate, setHargaMutawwifUpdate] = useState(250);
-  const [kursSaudi, setKursSaudi] = useState(4600);
-  const [kursUsd, setKursUsd] = useState(16000);
+  const [programHari, setProgramHari] = useState('9');
+  const [jumlahPax, setJumlahPax] = useState(45);
+  const [tl, setTl] = useState(1);
+  const [room, setRoom] = useState('QUAD');
+  const [pic, setPic] = useState('Operational');
+  const [kursSaudi, setKursSaudi] = useState(4300);
+  const [kursUsd, setKursUsd] = useState(15800);
   const [malamMadinah, setMalamMadinah] = useState(3);
   const [malamMakkah, setMalamMakkah] = useState(4);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const professionalOfferingRef = useRef<HTMLDivElement>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Selections
-  const [selectedHotelMadinah, setSelectedHotelMadinah] = useState(hotels.find(h => h.city === 'Madinah')?.id || '');
-  const [selectedHotelMakkah, setSelectedHotelMakkah] = useState(hotels.find(h => h.city === 'Makkah')?.id || '');
-  const [selectedHandling, setSelectedHandling] = useState(HANDLING_TIERS[0]?.minPax.toString() || '');
-  const [selectedEquipment, setSelectedEquipment] = useState(equipmentData[0]?.id || '');
-  const [selectedVisa, setSelectedVisa] = useState(visaData[0]?.id || '');
-  const [selectedTransport, setSelectedTransport] = useState(`${transportData[0]?.id}|0` || '');
+  const [selectedHotelMadinah, setSelectedHotelMadinah] = useState('');
+  const [selectedHotelMakkah, setSelectedHotelMakkah] = useState('');
+  const [selectedHandling, setSelectedHandling] = useState('45');
+  const [selectedEquipment, setSelectedEquipment] = useState('eq-1');
+  const [selectedVisa, setSelectedVisa] = useState('v-1');
+  const [selectedTransport, setSelectedTransport] = useState('none|0');
   const [selectedMaskapai, setSelectedMaskapai] = useState('');
-  const [selectedHandlingDomestik, setSelectedHandlingDomestik] = useState(handlingDomestikData[0]?.id || '');
-  const [selectedManasik, setSelectedManasik] = useState(manasikData[0]?.id || '');
+  const [selectedHandlingDomestik, setSelectedHandlingDomestik] = useState('');
+  const [selectedManasik, setSelectedManasik] = useState('');
   const [selectedZiarah, setSelectedZiarah] = useState('');
   const [selectedKeretaCepat, setSelectedKeretaCepat] = useState('');
+  const [asuransiHargaApk, setAsuransiHargaApk] = useState(185000);
+  const [asuransiHargaVendor, setAsuransiHargaVendor] = useState(185000);
+  const [komisiMitra, setKomisiMitra] = useState(1000000);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
 
-  // Prices and Margins
-  const [maskapaiHargaApk, setMaskapaiHargaApk] = useState(16000000);
-  const [maskapaiHargaVendor, setMaskapaiHargaVendor] = useState(15200000);
-  
-  const [asuransiHargaApk, setAsuransiHargaApk] = useState(65000);
-  const [asuransiHargaVendor, setAsuransiHargaVendor] = useState(65000);
-  
-  const [manasikHargaApk, setManasikHargaApk] = useState(50000);
-  const [manasikHargaVendor, setManasikHargaVendor] = useState(0);
-  
-  const [handlingDomestikHargaApk, setHandlingDomestikHargaApk] = useState(200000);
-  const [handlingDomestikHargaVendor, setHandlingDomestikHargaVendor] = useState(135000);
-
-  const [ziarahHargaApk, setZiarahHargaApk] = useState(0);
-  const [ziarahHargaVendor, setZiarahHargaVendor] = useState(0);
-
-  const [keretaCepatHargaApk, setKeretaCepatHargaApk] = useState(0);
-  const [keretaCepatHargaVendor, setKeretaCepatHargaVendor] = useState(0);
-
-  const [komisiMitra, setKomisiMitra] = useState(3000000);
-  const komisiUmarohPercent = 10;
-  const komisiUmaroh = komisiMitra * (komisiUmarohPercent / 100);
+  useEffect(() => {
+    if (tglKeberangkatan && !selectedHotelMadinah && !selectedHotelMakkah) {
+      const madinah = hotels.find(h => h.city === 'Madinah');
+      const makkah = hotels.find(h => h.city === 'Makkah');
+      if (madinah) setSelectedHotelMadinah(madinah.id);
+      if (makkah) setSelectedHotelMakkah(makkah.id);
+    }
+  }, [tglKeberangkatan, selectedHotelMadinah, selectedHotelMakkah]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -103,306 +88,270 @@ export const SalesOrderView: React.FC = () => {
       currency: 'IDR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount).replace('Rp', 'Rp ');
   };
 
-  const formatPercent = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'percent',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Helper to calculate row values
-  const calculateRow = (hargaApk: number, hargaVendor: number, jamaahBayar: number, jamaahBeli: number) => {
-    const estMargin = hargaApk - hargaVendor;
-    const pctMargin = hargaApk > 0 ? estMargin / hargaApk : 0;
-    const totalHrgJual = hargaApk * jamaahBayar;
-    const totalHargaBeli = hargaVendor * jamaahBeli;
-    const totalMargin = totalHrgJual - totalHargaBeli;
-    return { estMargin, pctMargin, totalHrgJual, totalHargaBeli, totalMargin };
-  };
+  const formatPercent = (val: number) => `${(val * 100).toFixed(2)}%`;
 
   const jamaahBayar = jumlahPax;
-  const jamaahBeli = jumlahPax + tl;
+  const jamaahBeli = jumlahPax;
 
-  const availableMadinahHotels = hotels.filter(h => h.city === 'Madinah' && getQuadPrice(h, tglKeberangkatan) !== null);
-  const availableMakkahHotels = hotels.filter(h => h.city === 'Makkah' && getQuadPrice(h, tglKeberangkatan) !== null);
-
-  const availableMaskapai = [...maskapaiData]
-    .filter(m => {
-      const matchDays = programHari ? m.programDays.toString() === programHari : true;
-      return matchDays;
-    })
-    .sort((a, b) => {
-      if (!tglKeberangkatan) {
-        return new Date(a.tanggalKeberangkatan).getTime() - new Date(b.tanggalKeberangkatan).getTime();
-      }
-      const dateA = new Date(a.tanggalKeberangkatan).getTime();
-      const dateB = new Date(b.tanggalKeberangkatan).getTime();
-      const targetDate = new Date(tglKeberangkatan).getTime();
-      
-      return Math.abs(dateA - targetDate) - Math.abs(dateB - targetDate);
-    });
-
-  useEffect(() => {
-    if (selectedHotelMadinah && !availableMadinahHotels.find(h => h.id === selectedHotelMadinah)) {
-      setSelectedHotelMadinah('');
-    }
-    if (selectedHotelMakkah && !availableMakkahHotels.find(h => h.id === selectedHotelMakkah)) {
-      setSelectedHotelMakkah('');
-    }
-    if (selectedMaskapai && !availableMaskapai.find(m => m.id === selectedMaskapai)) {
-      setSelectedMaskapai('');
-    }
-  }, [tglKeberangkatan, programHari]);
-
-  useEffect(() => {
-    const maskapai = maskapaiData.find(m => m.id === selectedMaskapai);
-    if (maskapai) {
-      setMaskapaiHargaApk(maskapai.hargaJual);
-      setMaskapaiHargaVendor(maskapai.hargaBeli);
-    }
-  }, [selectedMaskapai]);
-
-  useEffect(() => {
-    const tier = HANDLING_TIERS.find(h => jumlahPax >= h.minPax && jumlahPax <= h.maxPax) || HANDLING_TIERS[HANDLING_TIERS.length - 1];
-    if (tier) {
-      setSelectedHandling(tier.minPax.toString());
-    }
-  }, [jumlahPax]);
-
-  useEffect(() => {
-    const handlingDomestik = handlingDomestikData.find(h => h.id === selectedHandlingDomestik);
-    if (handlingDomestik) {
-      setHandlingDomestikHargaApk(handlingDomestik.hargaJual);
-      setHandlingDomestikHargaVendor(handlingDomestik.hargaBeli);
-    }
-  }, [selectedHandlingDomestik]);
-
-  useEffect(() => {
-    const manasik = manasikData.find(m => m.id === selectedManasik);
-    if (manasik) {
-      setManasikHargaApk(manasik.hargaJual);
-      setManasikHargaVendor(manasik.hargaBeli);
-    }
-  }, [selectedManasik]);
-
-  useEffect(() => {
-    const ziarah = ziarahData.find(z => z.id === selectedZiarah);
-    if (ziarah) {
-      setZiarahHargaApk(ziarah.hargaJual);
-      setZiarahHargaVendor(ziarah.hargaBeli);
-    } else {
-      setZiarahHargaApk(0);
-      setZiarahHargaVendor(0);
-    }
-  }, [selectedZiarah]);
-
-  useEffect(() => {
-    const keretaCepat = keretaCepatData.find(k => k.id === selectedKeretaCepat);
-    if (keretaCepat) {
-      setKeretaCepatHargaApk(keretaCepat.hargaJual);
-      setKeretaCepatHargaVendor(keretaCepat.hargaBeli);
-    } else {
-      setKeretaCepatHargaApk(0);
-      setKeretaCepatHargaVendor(0);
-    }
-  }, [selectedKeretaCepat]);
-
-  // Row calculations
+  const availableMaskapai = maskapaiData.filter(m => m.programDays === Number(programHari));
   const maskapaiObj = maskapaiData.find(m => m.id === selectedMaskapai);
-  const maskapai = calculateRow(maskapaiHargaApk, maskapaiHargaVendor, jamaahBayar, jamaahBeli);
-  
-  // Hotel Madinah
+  const maskapaiHargaApk = maskapaiObj?.hargaJual || 0;
+  const maskapaiHargaVendor = maskapaiObj?.hargaBeli || 0;
+  const maskapai = {
+    estMargin: maskapaiHargaApk - maskapaiHargaVendor,
+    pctMargin: maskapaiHargaApk > 0 ? (maskapaiHargaApk - maskapaiHargaVendor) / maskapaiHargaApk : 0,
+    totalHrgJual: maskapaiHargaApk * jamaahBayar,
+    totalHargaBeli: maskapaiHargaVendor * jamaahBeli,
+    totalMargin: (maskapaiHargaApk * jamaahBayar) - (maskapaiHargaVendor * jamaahBeli)
+  };
+
+  const availableMadinahHotels = hotels.filter(h => h.city === 'Madinah');
   const hotelMadinahObj = hotels.find(h => h.id === selectedHotelMadinah);
-  const hotelMadinahHargaVendor = hotelMadinahObj ? ((getQuadPrice(hotelMadinahObj, tglKeberangkatan) || 0) * kursSaudi * malamMadinah) / 4 : 0;
-  const hotelMadinahHargaApk = hotelMadinahHargaVendor * 1.12; // Example 12% markup
-  const hotelMadinah = calculateRow(hotelMadinahHargaApk, hotelMadinahHargaVendor, jamaahBayar, jamaahBeli);
+  const hotelMadinahPriceSAR = hotelMadinahObj ? (getQuadPrice(hotelMadinahObj, tglKeberangkatan) || 0) : 0;
+  const hotelMadinahHargaApk = (hotelMadinahPriceSAR * kursSaudi / 4) * malamMadinah;
+  const hotelMadinahHargaVendor = (hotelMadinahPriceSAR * kursSaudi / 4) * malamMadinah;
+  const hotelMadinah = {
+    estMargin: hotelMadinahHargaApk - hotelMadinahHargaVendor,
+    pctMargin: 0,
+    totalHrgJual: hotelMadinahHargaApk * jamaahBayar,
+    totalHargaBeli: hotelMadinahHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
 
-  // Hotel Makkah
+  const availableMakkahHotels = hotels.filter(h => h.city === 'Makkah');
   const hotelMakkahObj = hotels.find(h => h.id === selectedHotelMakkah);
-  const hotelMakkahHargaVendor = hotelMakkahObj ? ((getQuadPrice(hotelMakkahObj, tglKeberangkatan) || 0) * kursSaudi * malamMakkah) / 4 : 0;
-  const hotelMakkahHargaApk = hotelMakkahHargaVendor * 1.07; // Example 7% markup
-  const hotelMakkah = calculateRow(hotelMakkahHargaApk, hotelMakkahHargaVendor, jamaahBayar, jamaahBeli);
+  const hotelMakkahPriceSAR = hotelMakkahObj ? (getQuadPrice(hotelMakkahObj, tglKeberangkatan) || 0) : 0;
+  const hotelMakkahHargaApk = (hotelMakkahPriceSAR * kursSaudi / 4) * malamMakkah;
+  const hotelMakkahHargaVendor = (hotelMakkahPriceSAR * kursSaudi / 4) * malamMakkah;
+  const hotelMakkah = {
+    estMargin: hotelMakkahHargaApk - hotelMakkahHargaVendor,
+    pctMargin: 0,
+    totalHrgJual: hotelMakkahHargaApk * jamaahBayar,
+    totalHargaBeli: hotelMakkahHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
 
-  // Handling
-  const handlingObj = HANDLING_TIERS.find(h => h.minPax.toString() === selectedHandling);
-  const handlingHargaVendor = handlingObj ? (handlingObj.hpp + HANDLING_CONSTANTS.adminFee) * kursUsd : 0;
-  const handlingHargaApk = handlingHargaVendor * (1 + HANDLING_CONSTANTS.defaultMarginPercent / 100);
-  const handling = calculateRow(handlingHargaApk, handlingHargaVendor, jamaahBayar, jamaahBeli);
+  const handlingTier = HANDLING_TIERS.find(t => t.minPax.toString() === selectedHandling);
+  const handlingHargaApk = (handlingTier?.hpp || 0) * kursSaudi;
+  const handlingHargaVendor = (handlingTier?.hpp || 0) * kursSaudi;
+  const handling = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: handlingHargaApk * jamaahBayar,
+    totalHargaBeli: handlingHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
 
-  // Equipment
   const equipmentObj = equipmentData.find(e => e.id === selectedEquipment);
-  const equipmentHargaVendor = equipmentObj ? equipmentObj.basePrice : 0;
-  const equipmentHargaApk = equipmentObj ? equipmentObj.roundedPrice : 0;
-  const perlengkapan = calculateRow(equipmentHargaApk, equipmentHargaVendor, jamaahBayar, jamaahBeli);
+  const equipmentHargaApk = equipmentObj?.roundedPrice || 0;
+  const equipmentHargaVendor = equipmentObj?.roundedPrice || 0;
+  const perlengkapan = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: equipmentHargaApk * jamaahBayar,
+    totalHargaBeli: equipmentHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
 
-  // Visa
   const visaObj = visaData.find(v => v.id === selectedVisa);
-  const visaHargaVendor = visaObj ? visaObj.vendorPrice : 2301600;
-  const visaHargaApk = visaObj ? visaObj.sellingPrice : 2531760;
-  const visaRow = calculateRow(visaHargaApk, visaHargaVendor, jamaahBayar, jamaahBeli);
+  const visaHargaApk = (visaObj?.foreignPriceUsd || 0) * kursUsd;
+  const visaHargaVendor = (visaObj?.foreignPriceUsd || 0) * kursUsd;
+  const visaRow = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: visaHargaApk * jamaahBayar,
+    totalHargaBeli: visaHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
 
-  // Transport
-  const [transportId, routeIndexStr] = selectedTransport.split('|');
+  const [transportId, routeIdx] = selectedTransport.split('|');
   const transportObj = transportData.find(t => t.id === transportId);
-  const transportRoute = transportObj?.routes[Number(routeIndexStr)];
-  const transportHargaVendor = transportRoute ? (transportRoute.price * kursSaudi) / (jumlahPax > 0 ? jumlahPax : 1) : 0;
-  const transportHargaApk = transportHargaVendor * 1.29; // Example 29% markup
-  const transportRow = calculateRow(transportHargaApk, transportHargaVendor, jamaahBayar, jamaahBeli);
+  const transportRoute = transportObj?.routes[parseInt(routeIdx)];
+  const transportHargaApk = ((transportRoute?.price || 0) * kursSaudi) / (jumlahPax || 1);
+  const transportHargaVendor = ((transportRoute?.price || 0) * kursSaudi) / (jumlahPax || 1);
+  const transportRow = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: transportHargaApk * jamaahBayar,
+    totalHargaBeli: transportHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
 
-  const asuransi = calculateRow(asuransiHargaApk, asuransiHargaVendor, jamaahBayar, jamaahBeli);
-  const manasik = calculateRow(manasikHargaApk, manasikHargaVendor, jamaahBayar, jamaahBeli);
-  const ziarah = calculateRow(ziarahHargaApk, ziarahHargaVendor, jamaahBayar, jamaahBeli);
-  const keretaCepat = calculateRow(keretaCepatHargaApk, keretaCepatHargaVendor, jamaahBayar, jamaahBeli);
-  const handlingDomestik = calculateRow(handlingDomestikHargaApk, handlingDomestikHargaVendor, jamaahBayar, jamaahBeli);
+  const asuransi = {
+    estMargin: asuransiHargaApk - asuransiHargaVendor,
+    pctMargin: asuransiHargaApk > 0 ? (asuransiHargaApk - asuransiHargaVendor) / asuransiHargaApk : 0,
+    totalHrgJual: asuransiHargaApk * jamaahBayar,
+    totalHargaBeli: asuransiHargaVendor * jamaahBeli,
+    totalMargin: (asuransiHargaApk * jamaahBayar) - (asuransiHargaVendor * jamaahBeli)
+  };
 
-  // Tour Leader
-  const subtotalHargaVendor = maskapaiHargaVendor + hotelMadinahHargaVendor + hotelMakkahHargaVendor + handlingHargaVendor + equipmentHargaVendor + visaHargaVendor + transportHargaVendor + asuransiHargaVendor + manasikHargaVendor + ziarahHargaVendor + keretaCepatHargaVendor + handlingDomestikHargaVendor;
-  const tlHargaApk = (jumlahPax > 0 && tl > 0) ? (subtotalHargaVendor * tl) / jumlahPax : 0;
-  const tlHargaVendor = 0;
-  const tlRow = calculateRow(tlHargaApk, tlHargaVendor, jamaahBayar, 0); // TL doesn't have jamaah beli cost here usually, or it's distributed
+  const manasikObj = manasikData.find(m => m.id === selectedManasik);
+  const manasikHargaApk = manasikObj?.hargaJual || 0;
+  const manasikHargaVendor = manasikObj?.hargaBeli || 0;
+  const manasik = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: manasikHargaApk * jamaahBayar,
+    totalHargaBeli: manasikHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
 
-  // Totals
-  const totalHargaApk = maskapaiHargaApk + hotelMadinahHargaApk + hotelMakkahHargaApk + handlingHargaApk + equipmentHargaApk + visaHargaApk + transportHargaApk + asuransiHargaApk + manasikHargaApk + ziarahHargaApk + keretaCepatHargaApk + handlingDomestikHargaApk + tlHargaApk;
-  const totalHargaVendor = subtotalHargaVendor + tlHargaVendor;
+  const ziarahObj = ziarahData.find(z => z.id === selectedZiarah);
+  const ziarahHargaApk = ziarahObj?.hargaJual || 0;
+  const ziarahHargaVendor = ziarahObj?.hargaBeli || 0;
+  const ziarah = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: ziarahHargaApk * jamaahBayar,
+    totalHargaBeli: ziarahHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
+
+  const keretaCepatObj = keretaCepatData.find(k => k.id === selectedKeretaCepat);
+  const keretaCepatHargaApk = keretaCepatObj?.hargaJual || 0;
+  const keretaCepatHargaVendor = keretaCepatObj?.hargaBeli || 0;
+  const keretaCepat = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: keretaCepatHargaApk * jamaahBayar,
+    totalHargaBeli: keretaCepatHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
+
+  const handlingDomestikObj = handlingDomestikData.find(h => h.id === selectedHandlingDomestik);
+  const handlingDomestikHargaApk = handlingDomestikObj?.hargaJual || 0;
+  const handlingDomestikHargaVendor = handlingDomestikObj?.hargaBeli || 0;
+  const handlingDomestik = {
+    estMargin: 0,
+    pctMargin: 0,
+    totalHrgJual: handlingDomestikHargaApk * jamaahBayar,
+    totalHargaBeli: handlingDomestikHargaVendor * jamaahBeli,
+    totalMargin: 0
+  };
+
+  const tlHargaApk = (15000000 / (jumlahPax || 1));
+  const tlHargaVendor = (15000000 / (jumlahPax || 1));
+  const tlRow = {
+    totalHrgJual: tlHargaApk * tl
+  };
+
+  const totalHargaApk = maskapaiHargaApk + hotelMadinahHargaApk + hotelMakkahHargaApk + handlingHargaApk + equipmentHargaApk + visaHargaApk + transportHargaApk + asuransiHargaApk + manasikHargaApk + ziarahHargaApk + keretaCepatHargaApk + handlingDomestikHargaApk + (tl > 0 ? tlHargaApk * tl / jamaahBayar : 0);
+  const totalHargaVendor = maskapaiHargaVendor + hotelMadinahHargaVendor + hotelMakkahHargaVendor + handlingHargaVendor + equipmentHargaVendor + visaHargaVendor + transportHargaVendor + asuransiHargaVendor + manasikHargaVendor + ziarahHargaVendor + keretaCepatHargaVendor + handlingDomestikHargaVendor + (tl > 0 ? tlHargaVendor * tl / jamaahBeli : 0);
   const totalEstMargin = totalHargaApk - totalHargaVendor;
-  const totalHrgJual = maskapai.totalHrgJual + hotelMadinah.totalHrgJual + hotelMakkah.totalHrgJual + handling.totalHrgJual + perlengkapan.totalHrgJual + visaRow.totalHrgJual + transportRow.totalHrgJual + asuransi.totalHrgJual + manasik.totalHrgJual + ziarah.totalHrgJual + keretaCepat.totalHrgJual + handlingDomestik.totalHrgJual + tlRow.totalHrgJual;
-  const totalHargaBeliAll = maskapai.totalHargaBeli + hotelMadinah.totalHargaBeli + hotelMakkah.totalHargaBeli + handling.totalHargaBeli + perlengkapan.totalHargaBeli + visaRow.totalHargaBeli + transportRow.totalHargaBeli + asuransi.totalHargaBeli + manasik.totalHargaBeli + ziarah.totalHargaBeli + keretaCepat.totalHargaBeli + handlingDomestik.totalHargaBeli + tlRow.totalHargaBeli;
+  const totalHrgJual = totalHargaApk * jamaahBayar;
+  const totalHargaBeliAll = totalHargaVendor * jamaahBeli;
   const totalMarginAll = totalHrgJual - totalHargaBeliAll;
 
+  const komisiUmarohPercent = 5;
+  const komisiUmaroh = Math.round(totalHargaApk * komisiUmarohPercent / 100);
+
   const hargaQuadDewasa = totalHargaApk + komisiMitra + komisiUmaroh;
-  const hargaTripleDewasa = 32500000;
-  const hargaDoubleDewasa = 34000000;
+  const hargaTripleDewasa = hargaQuadDewasa + (500 * kursSaudi / 4);
+  const hargaDoubleDewasa = hargaQuadDewasa + (1000 * kursSaudi / 4);
+
+  const hargaVisaUpdate = visaObj?.foreignPriceUsd || 0;
+  const hargaTransportasiUpdate = transportRoute?.price || 0;
+  const hargaMutawwifUpdate = 0; // Placeholder
 
   const handleDownloadJpg = async () => {
-    if (!tableRef.current) return;
     setIsGenerating(true);
     try {
-      const canvas = await html2canvas(tableRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      } as any);
-      const image = canvas.toDataURL('image/jpeg', 0.9);
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `Offering_${namaPaket || 'SalesOrder'}_${tglKeberangkatan || 'Draft'}.jpg`;
-      link.click();
-    } catch (error) {
-      console.error('JPG generation failed:', error);
+      const element = document.getElementById('professional-offering');
+      if (element) {
+        // @ts-ignore
+        const canvas = await html2canvas(element, { scale: 2 });
+        const link = document.createElement('a');
+        link.download = `Offering-${namaPaket || 'Umrah'}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+      }
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleDownloadExcel = () => {
-    const data = [
-      ["NAMA PAKET", namaPaket, "", "", "JUMLAH PAX", jumlahPax, "PIC", pic, "HARGA VISA UPDATE", "", "", `$${hargaVisaUpdate}/pax`],
-      ["TGL KEBERANGKATAN", tglKeberangkatan, "", "", "+ TL", tl, "", "", "HARGA TRANSPORTASI UPDATE", "", "", `SAR${hargaTransportasiUpdate}`],
-      ["PROGRAM HARI", programHari, "ROOM", room, "NAMA TRAVEL", namaTravel, "", "", "HARGA MUTAWWIF UPDATE", "", "", `SAR${hargaMutawwifUpdate}`],
-      ["NAMA MITRA", namaMitra, "", "", "", "", "", "", "", "", "", ""],
-      [],
-      ["DESK", "VENDOR", "HARGA APK", "HARGA VENDOR", "EST. MARGIN", "% MARGIN", "JAMAAH BAYAR", "TOTAL HRG JUAL", "JAMAAH BELI", "TOTAL HARGA BELI", "TOTAL MARGIN", "REFF."],
-      [`MASKAPAI: ${maskapaiObj?.name || "-"}`, maskapaiObj?.namaVendor || "-", maskapaiHargaApk, maskapaiHargaVendor, maskapai.estMargin, formatPercent(maskapai.pctMargin), jamaahBayar, maskapai.totalHrgJual, jamaahBeli, maskapai.totalHargaBeli, maskapai.totalMargin, "CONFIRMED"],
-      [`HOTEL MADINAH: ${hotelMadinahObj?.name || "-"}`, hotelMadinahObj?.vendor || "-", hotelMadinahHargaApk, hotelMadinahHargaVendor, hotelMadinah.estMargin, formatPercent(hotelMadinah.pctMargin), jamaahBayar, hotelMadinah.totalHrgJual, jamaahBeli, hotelMadinah.totalHargaBeli, hotelMadinah.totalMargin, "UPDATE RATE"],
-      [`HOTEL MAKKAH: ${hotelMakkahObj?.name || "-"}`, hotelMakkahObj?.vendor || "-", hotelMakkahHargaApk, hotelMakkahHargaVendor, hotelMakkah.estMargin, formatPercent(hotelMakkah.pctMargin), jamaahBayar, hotelMakkah.totalHrgJual, jamaahBeli, hotelMakkah.totalHargaBeli, hotelMakkah.totalMargin, "UPDATE RATE"],
-      [`HANDLING: ${handlingObj ? `${handlingObj.minPax}-${handlingObj.maxPax} Pax` : "-"}`, "TFA", handlingHargaApk, handlingHargaVendor, handling.estMargin, formatPercent(handling.pctMargin), jamaahBayar, handling.totalHrgJual, jamaahBeli, handling.totalHargaBeli, handling.totalMargin, "UPDATE"],
-      [`PERLENGKAPAN: ${equipmentObj?.name || "-"}`, "UMAROH", equipmentHargaApk, equipmentHargaVendor, perlengkapan.estMargin, formatPercent(perlengkapan.pctMargin), jamaahBayar, perlengkapan.totalHrgJual, jamaahBeli, perlengkapan.totalHargaBeli, perlengkapan.totalMargin, "GUDANG OK"],
-      [`VISA: ${visaObj?.paxRange || "-"}`, "TFA", visaHargaApk, visaHargaVendor, visaRow.estMargin, formatPercent(visaRow.pctMargin), jamaahBayar, visaRow.totalHrgJual, jamaahBeli, visaRow.totalHargaBeli, visaRow.totalMargin, "UPDATE"],
-      [`TRANSPORT: ${transportObj?.name || "-"} ${transportRoute?.route || ""}`, transportObj?.namaVendor || "-", transportHargaApk, transportHargaVendor, transportRow.estMargin, formatPercent(transportRow.pctMargin), jamaahBayar, transportRow.totalHrgJual, jamaahBeli, transportRow.totalHargaBeli, transportRow.totalMargin, ""],
-      ["ASURANSI ZURICH BASIC", "ZURICH", asuransiHargaApk, asuransiHargaVendor, asuransi.estMargin, formatPercent(asuransi.pctMargin), jamaahBayar, asuransi.totalHrgJual, jamaahBeli, asuransi.totalHargaBeli, asuransi.totalMargin, "UPDATE"],
-      [`MANASIK: ${manasikData.find(m => m.id === selectedManasik)?.item || "-"}`, "-", manasikHargaApk, manasikHargaVendor, manasik.estMargin, formatPercent(manasik.pctMargin), jamaahBayar, manasik.totalHrgJual, jamaahBeli, manasik.totalHargaBeli, manasik.totalMargin, ""],
-      [`ZIARAH: ${ziarahData.find(z => z.id === selectedZiarah)?.item || "-"}`, "-", ziarahHargaApk, ziarahHargaVendor, ziarah.estMargin, formatPercent(ziarah.pctMargin), jamaahBayar, ziarah.totalHrgJual, jamaahBeli, ziarah.totalHargaBeli, ziarah.totalMargin, ""],
-      [`KERETA CEPAT: ${keretaCepatData.find(k => k.id === selectedKeretaCepat)?.item || "-"}`, "-", keretaCepatHargaApk, keretaCepatHargaVendor, keretaCepat.estMargin, formatPercent(keretaCepat.pctMargin), jamaahBayar, keretaCepat.totalHrgJual, jamaahBeli, keretaCepat.totalHargaBeli, keretaCepat.totalMargin, ""],
-      [`HANDLING DOMESTIK: ${handlingDomestikData.find(h => h.id === selectedHandlingDomestik)?.item || "-"}`, "BOWO", handlingDomestikHargaApk, handlingDomestikHargaVendor, handlingDomestik.estMargin, formatPercent(handlingDomestik.pctMargin), jamaahBayar, handlingDomestik.totalHrgJual, jamaahBeli, handlingDomestik.totalHargaBeli, handlingDomestik.totalMargin, "UPDATE"],
-      ["TOUR LEADER (TL)", "", tlHargaApk, tlHargaVendor, tlRow.estMargin, "0%", jamaahBayar, tlRow.totalHrgJual, "", "", tlRow.totalMargin, ""],
-      [],
-      ["HARGA DEWASA SEBELUM ADA KOMISI", "", totalHargaApk, totalHargaVendor, totalEstMargin, formatPercent(totalEstMargin / totalHargaApk), "", totalHrgJual, "", totalHargaBeliAll, totalMarginAll, ""],
-      ["KOMISI MITRA", "", komisiMitra, "", "", "", "", "", "", "", "", ""],
-      ["KOMISI UMAROH", "", komisiUmaroh, "", "", "", "", "", "", "", "", ""],
-      ["HARGA QUAD DEWASA SETELAH ADA KOMISI", "", hargaQuadDewasa, "", "", "", "", "", "", "", "", ""],
-      ["HARGA TRIPLE DEWASA SETELAH ADA KOMISI", "", hargaTripleDewasa, "", "", "", "", "", "", "", "", ""],
-      ["HARGA DOUBLE DEWASA SETELAH ADA KOMISI", "", hargaDoubleDewasa, "", "", "", "", "", "", "", "", ""]
-    ];
-
-    const ws = XLSX.utils.aoa_to_sheet(data);
+    const ws = XLSX.utils.table_to_sheet(tableRef.current!);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sales Order");
-    XLSX.writeFile(wb, `SalesOrder_${namaPaket || 'Draft'}_${tglKeberangkatan || ''}.xlsx`);
+    XLSX.writeFile(wb, `SalesOrder-${namaPaket || 'Umrah'}.xlsx`);
   };
 
   const handleDownloadPdf = () => {
-    if (!professionalOfferingRef.current) return;
-    
-    const element = professionalOfferingRef.current;
+    const element = document.getElementById('professional-offering');
     const opt = {
       margin: 0,
-      filename: `Offering_${namaPaket || 'Draft'}_${tglKeberangkatan || ''}.pdf`,
+      filename: `Offering-${namaPaket || 'Umrah'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        letterRendering: true
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-
-    html2pdf().set(opt).from(element).save();
+    html2pdf().from(element).set(opt).save();
   };
 
-  const offeringData = {
-    tanggalPembuatan: new Date(),
-    namaTravel: namaTravel,
-    namaMitra: namaMitra,
-    jumlahPax: jumlahPax,
-    tourLeaderCount: tl,
-    jadwalKeberangkatan: tglKeberangkatan ? format(new Date(tglKeberangkatan), 'MMMM yyyy', { locale: id }) : '-',
-    program: namaPaket,
-    prices: {
-      maskapai: maskapaiHargaApk,
-      hotelMadinah: hotelMadinahHargaApk,
-      hotelMakkah: hotelMakkahHargaApk,
-      handlingSaudi: handlingHargaApk,
-      mutawif: 0, // Not explicitly tracked as separate state yet
-      aksesoris: equipmentHargaApk,
-      addOn: 0, // Not explicitly tracked as separate state yet
-      visa: visaHargaApk + transportHargaApk,
-      asuransi: asuransiHargaApk,
-      handlingDomestik: handlingDomestikHargaApk,
-      tl: tlHargaApk,
-      hargaHpp: totalHargaApk,
-      komisiMitra: komisiMitra,
-      komisiUmaroh: komisiUmaroh,
-      hargaQuad: hargaQuadDewasa,
-      hargaTriple: hargaQuadDewasa + 2500000, 
-      hargaDouble: hargaQuadDewasa + 4000000, 
-    },
-    details: {
-      hotelMadinahName: hotelMadinahObj?.name || '-',
-      hotelMakkahName: hotelMakkahObj?.name || '-',
-      maskapaiName: maskapaiObj?.name || '-',
-    }
+  const handleAIApply = (data: any) => {
+    if (data.namaPaket !== undefined) setNamaPaket(data.namaPaket);
+    if (data.namaTravel !== undefined) setNamaTravel(data.namaTravel);
+    if (data.namaMitra !== undefined) setNamaMitra(data.namaMitra);
+    if (data.tglKeberangkatan !== undefined) setTglKeberangkatan(data.tglKeberangkatan);
+    if (data.programHari !== undefined) setProgramHari(data.programHari);
+    if (data.jumlahPax !== undefined) setJumlahPax(data.jumlahPax);
+    if (data.tl !== undefined) setTl(data.tl);
+    if (data.room !== undefined) setRoom(data.room);
+    if (data.pic !== undefined) setPic(data.pic);
+    if (data.kursSaudi !== undefined) setKursSaudi(data.kursSaudi);
+    if (data.kursUsd !== undefined) setKursUsd(data.kursUsd);
+    if (data.malamMadinah !== undefined) setMalamMadinah(data.malamMadinah);
+    if (data.malamMakkah !== undefined) setMalamMakkah(data.malamMakkah);
+    if (data.selectedHotelMadinah !== undefined) setSelectedHotelMadinah(data.selectedHotelMadinah);
+    if (data.selectedHotelMakkah !== undefined) setSelectedHotelMakkah(data.selectedHotelMakkah);
+    if (data.selectedHandling !== undefined) setSelectedHandling(data.selectedHandling);
+    if (data.selectedEquipment !== undefined) setSelectedEquipment(data.selectedEquipment);
+    if (data.selectedVisa !== undefined) setSelectedVisa(data.selectedVisa);
+    if (data.selectedTransport !== undefined) setSelectedTransport(data.selectedTransport);
+    if (data.selectedMaskapai !== undefined) setSelectedMaskapai(data.selectedMaskapai);
+    if (data.selectedHandlingDomestik !== undefined) setSelectedHandlingDomestik(data.selectedHandlingDomestik);
+    if (data.selectedManasik !== undefined) setSelectedManasik(data.selectedManasik);
+    if (data.selectedZiarah !== undefined) setSelectedZiarah(data.selectedZiarah);
+    if (data.selectedKeretaCepat !== undefined) setSelectedKeretaCepat(data.selectedKeretaCepat);
+  };
+
+  const currentAIData = {
+    namaPaket, namaTravel, namaMitra, tglKeberangkatan, programHari, jumlahPax, tl, room, pic,
+    kursSaudi, kursUsd, malamMadinah, malamMakkah,
+    selectedHotelMadinah, selectedHotelMakkah, selectedHandling, selectedEquipment,
+    selectedVisa, selectedTransport, selectedMaskapai, selectedHandlingDomestik,
+    selectedManasik, selectedZiarah, selectedKeretaCepat
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-full overflow-x-auto">
+      <AIPromptInput 
+        context="Sales Order" 
+        currentData={currentAIData} 
+        onApply={handleAIApply} 
+        masterData={{
+          hotels,
+          maskapaiData,
+          transportData,
+          equipmentData,
+          visaData,
+          manasikData,
+          ziarahData,
+          keretaCepatData,
+          handlingDomestikData,
+          HANDLING_TIERS
+        }}
+      />
       {/* Hidden PDF Template */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <div ref={professionalOfferingRef}>
-          <ProfessionalOffering data={offeringData} />
-        </div>
-      </div>
 
       <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-800">Sales Order / Quotation</h2>
-          <div className="flex gap-4 items-center">
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h2 className="text-lg md:text-xl font-bold text-gray-800">Sales Order / Quotation</h2>
+          <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-center">
             <button 
               onClick={handleDownloadJpg}
               disabled={isGenerating}
@@ -438,7 +387,7 @@ export const SalesOrderView: React.FC = () => {
         </div>
 
         <div ref={tableRef} className="overflow-x-auto bg-white">
-          <table className="w-full text-sm border-collapse min-w-[1200px]">
+          <table className="w-full text-[10px] md:text-sm border-collapse min-w-[1000px] md:min-w-[1200px]">
             <tbody>
               {/* Header Rows */}
               <tr className="bg-gray-100 border-b border-gray-300">

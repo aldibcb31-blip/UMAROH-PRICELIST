@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, RefreshCw, Download, Users, DollarSign, MapPin } from 'lucide-react';
+import { Calendar, RefreshCw, Download, Users, DollarSign, MapPin, Sparkles } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { AIPromptInput } from './AIPromptInput';
 
 export const MutawifTemplateView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -139,8 +140,40 @@ export const MutawifTemplateView: React.FC = () => {
     }
   };
 
+  const handleAIApply = (data: any) => {
+    if (data.selectedDate !== undefined) setSelectedDate(data.selectedDate);
+    if (data.hargaAsing !== undefined) setHargaAsing(data.hargaAsing);
+    if (data.jumlahHari !== undefined) setJumlahHari(data.jumlahHari);
+    if (data.kurs !== undefined) setKurs(data.kurs);
+    if (data.persentase !== undefined) setPersentase(data.persentase);
+    if (data.maxPax !== undefined) setMaxPax(data.maxPax);
+    if (data.currency !== undefined) setCurrency(data.currency);
+    if (data.tableRows !== undefined) setTableRows(data.tableRows);
+  };
+
+  const currentAIData = {
+    selectedDate,
+    hargaAsing,
+    jumlahHari,
+    kurs,
+    persentase,
+    maxPax,
+    currency,
+    tableRows
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center gap-6 print:p-0 print:bg-white print:block">
+      
+      {/* AI Prompt Input */}
+      <div className="w-full max-w-[210mm] print:hidden">
+        <AIPromptInput 
+          context="Mutawif Template" 
+          currentData={currentAIData} 
+          onApply={handleAIApply} 
+        />
+      </div>
+
       {/* Controls */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 w-full max-w-[210mm] flex flex-col gap-4 print:hidden">
         <div className="flex items-center gap-4 flex-wrap">
@@ -243,7 +276,8 @@ export const MutawifTemplateView: React.FC = () => {
       </div>
 
       {/* A4 Aspect Ratio Container */}
-      <div ref={printRef} className="w-[210mm] min-h-[297mm] bg-[#FDB913] shadow-2xl relative text-gray-900 font-sans flex flex-col print:shadow-none print:m-0 border-4 border-purple-500 p-8">
+      <div className="w-full overflow-x-auto pb-8 flex justify-center">
+        <div ref={printRef} className="w-[210mm] min-h-[297mm] bg-[#FDB913] shadow-2xl relative text-gray-900 font-sans flex flex-col print:shadow-none print:m-0 border-4 border-purple-500 p-8 shrink-0">
         
         {/* Background Pattern (Subtle) */}
         <div className="absolute inset-0 opacity-10 pointer-events-none" 
@@ -255,10 +289,7 @@ export const MutawifTemplateView: React.FC = () => {
           <div className="flex flex-col">
              {/* Logo */}
             <div className="flex items-center gap-3 mb-2">
-               <div className="bg-gray-900 text-[#FDB913] w-14 h-14 rounded-full flex items-center justify-center font-bold text-3xl border-2 border-[#FDB913] shadow-sm">
-                 U
-               </div>
-               <span className="text-5xl font-bold tracking-tighter text-gray-900 lowercase">umaroh</span>
+               <img src="https://umaroh.com/assets/logo-light-D4UzTX0_.png" alt="umaroh logo" className="h-16 w-auto" referrerPolicy="no-referrer" />
             </div>
             <p className="text-[10px] italic font-semibold ml-1 tracking-wide">Platform Digital Umrah & Haji Pertama di Indonesia</p>
           </div>
@@ -343,6 +374,7 @@ export const MutawifTemplateView: React.FC = () => {
                     <p>Jl. Tangkuban Prahu No.7, RT.01/RW.05, Babakan, Kecamatan Bogor Tengah, Kota Bogor, Jawa Barat 16128</p>
                 </div>
             </div>
+        </div>
         </div>
       </div>
     </div>

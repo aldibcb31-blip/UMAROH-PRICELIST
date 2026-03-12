@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Star, MapPin, Calendar, Printer, Users, Briefcase, RefreshCw, Download } from 'lucide-react';
+import { Star, MapPin, Calendar, Printer, Users, Briefcase, RefreshCw, Download, Sparkles } from 'lucide-react';
 import { hotels, Hotel } from '../data/hotels';
 import { isDateInRange } from '../utils/dateUtils';
 import { HANDLING_TIERS } from '../data/handlingSaudi';
 import { visaData } from '../data/visa';
 import html2canvas from 'html2canvas';
+import { AIPromptInput } from './AIPromptInput';
 
 interface QuotationRow {
   madinah?: Partial<Hotel>;
@@ -113,19 +114,26 @@ export const QuotationView: React.FC = () => {
       return season && season.prices && season.prices.length > 0;
     });
 
+    const availableMakkahHotels = hotels.filter(hotel => {
+      if (hotel.city !== 'Makkah') return false;
+      const season = hotel.seasons.find(s => isDateInRange(checkDate, s.range));
+      return season && season.prices && season.prices.length > 0;
+    });
+
     const handlingSAR = getHandlingPriceSAR();
     const mutawwifSAR = getMutawwifPriceSAR();
     const visaIDR = getVisaPriceIDR();
 
     // Update existing rows with new prices if both hotels are present
     setRows(prevRows => {
-      // If prevRows is empty (initial state), fill with Madinah hotels
+      // If prevRows is empty (initial state), fill with Madinah and Makkah hotels
       if (prevRows.every(r => !r.madinah && !r.makkah)) {
         return Array.from({ length: 14 }, (_, i) => {
           const madinahHotel = availableMadinahHotels[i];
+          const makkahHotel = availableMakkahHotels[i];
           return {
             madinah: madinahHotel || {},
-            makkah: {},
+            makkah: makkahHotel || {},
             priceDouble: '-',
             priceTriple: '-',
             priceQuad: '-',
@@ -477,9 +485,47 @@ export const QuotationView: React.FC = () => {
     });
   }, [selectedDate]);
 
+  const handleAIApply = (data: any) => {
+    if (data.selectedDate !== undefined) setSelectedDate(data.selectedDate);
+    if (data.paxCount !== undefined) setPaxCount(data.paxCount);
+    if (data.includeHandling !== undefined) setIncludeHandling(data.includeHandling);
+    if (data.includeMutawif !== undefined) setIncludeMutawif(data.includeMutawif);
+    if (data.includeVisa !== undefined) setIncludeVisa(data.includeVisa);
+    if (data.currency !== undefined) setCurrency(data.currency);
+    if (data.kurs !== undefined) setKurs(data.kurs);
+    if (data.kursUsd !== undefined) setKursUsd(data.kursUsd);
+    if (data.rows !== undefined) setRows(data.rows);
+  };
+
+  const currentAIData = {
+    selectedDate,
+    paxCount,
+    includeHandling,
+    includeMutawif,
+    includeVisa,
+    currency,
+    kurs,
+    kursUsd,
+    rows
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center gap-6 print:p-0 print:bg-white print:block">
       
+      {/* AI Prompt Input */}
+      <div className="w-full max-w-[210mm] print:hidden">
+        <AIPromptInput 
+          context="Price UST (Quotation)" 
+          currentData={currentAIData} 
+          onApply={handleAIApply} 
+          masterData={{
+            hotels,
+            HANDLING_TIERS,
+            visaData
+          }}
+        />
+      </div>
+
       {/* Controls */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 w-full max-w-[210mm] flex items-center justify-between print:hidden">
         <div className="flex items-center gap-4 flex-wrap">
@@ -604,7 +650,8 @@ export const QuotationView: React.FC = () => {
       </datalist>
 
       {/* A4 Aspect Ratio Container */}
-      <div ref={printRef} className="w-[210mm] min-h-[297mm] bg-amber-400 shadow-2xl relative text-gray-900 font-sans flex flex-col print:shadow-none print:m-0">
+      <div className="w-full overflow-x-auto pb-8 flex justify-center">
+        <div ref={printRef} className="w-[210mm] min-h-[297mm] bg-amber-400 shadow-2xl relative text-gray-900 font-sans flex flex-col print:shadow-none print:m-0 shrink-0">
         
         {/* Background Pattern (Subtle) */}
         <div className="absolute inset-0 opacity-5 pointer-events-none" 
@@ -616,10 +663,7 @@ export const QuotationView: React.FC = () => {
           <div className="flex flex-col">
              {/* Logo */}
             <div className="flex items-center gap-3 mb-2">
-               <div className="bg-gray-900 text-amber-400 w-14 h-14 rounded-full flex items-center justify-center font-bold text-3xl border-2 border-amber-400 shadow-sm">
-                 U
-               </div>
-               <span className="text-5xl font-bold tracking-tighter text-gray-900 lowercase">umaroh</span>
+               <img src="https://umaroh.com/assets/logo-light-D4UzTX0_.png" alt="umaroh logo" className="h-16 w-auto" referrerPolicy="no-referrer" />
             </div>
             <p className="text-[10px] italic font-semibold ml-1 tracking-wide">Platform Digital Umrah & Haji Pertama di Indonesia</p>
           </div>
@@ -783,6 +827,7 @@ export const QuotationView: React.FC = () => {
                     <p>Jl. Tangkuban Prahu No.7, RT.01/RW.03, Babakan, Kecamatan Bogor Tengah, Kota Bogor, Jawa Barat 16128</p>
                 </div>
             </div>
+        </div>
         </div>
       </div>
     </div>

@@ -9,10 +9,7 @@ export const Footer: React.FC = () => {
           {/* Left Side: Logo & Description */}
           <div>
             <div className="flex items-center gap-2 mb-6">
-              <div className="bg-amber-500 p-1.5 rounded-full">
-                <div className="w-6 h-6 border-2 border-black rounded-full flex items-center justify-center font-bold text-black text-xs">U</div>
-              </div>
-              <span className="text-2xl font-bold tracking-tight text-black">umaroh</span>
+              <img src="https://umaroh.com/assets/logo-light-D4UzTX0_.png" alt="umaroh logo" className="h-10 w-auto" referrerPolicy="no-referrer" />
             </div>
             <p className="text-gray-600 leading-relaxed max-w-md mb-8">
               Umaroh adalah platform digital penyedia layanan satu atap untuk bisnis perjalanan umrah. 
